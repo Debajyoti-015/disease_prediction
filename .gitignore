@@ -1,0 +1,32 @@
+# Ignore dataset
+sample_dataset/
+
+# Ignore large model files
+*.h5
+*.pkl
+*.keras
+*.joblib
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+env/
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# IDE/editor configs
+.vscode/
+.idea/
+*.iml
+
+# System files
+.DS_Store
+Thumbs.db
+
