@@ -1,14 +1,22 @@
+from pymongo import MongoClient
 import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext
 from PIL import Image, ImageTk
 import numpy as np
 from tensorflow import keras
 
+
+# ✅ MongoDB Connection
+client = MongoClient("mongodb://localhost:27017/")
+db = client["disease_db"]
+predictions = db["predictions"]
+
+
 class DiseasePredictionGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Skin Disease Prediction")
-        self.root.geometry("650x850")
+        self.root.geometry("650x900")
         self.root.configure(bg="#f0f4f7")
 
         # Load model
@@ -22,11 +30,23 @@ class DiseasePredictionGUI:
 
     def build_ui(self):
         # Title label
-        title = tk.Label(self.root, text="Skin Disease Prediction System", font=("Helvetica", 20, "bold"), bg="#f0f4f7")
+        title = tk.Label(
+            self.root,
+            text="Skin Disease Prediction System",
+            font=("Helvetica", 20, "bold"),
+            bg="#f0f4f7"
+        )
         title.pack(pady=15)
 
         # Symptoms frame
-        symptom_frame = tk.LabelFrame(self.root, text="Select Symptoms", padx=15, pady=15, font=("Helvetica", 14), bg="white")
+        symptom_frame = tk.LabelFrame(
+            self.root,
+            text="Select Symptoms",
+            padx=15,
+            pady=15,
+            font=("Helvetica", 14),
+            bg="white"
+        )
         symptom_frame.pack(padx=20, pady=10, fill="x")
 
         self.symptoms = {
@@ -40,26 +60,78 @@ class DiseasePredictionGUI:
         }
 
         for symptom, var in self.symptoms.items():
-            cb = tk.Checkbutton(symptom_frame, text=symptom, variable=var, font=("Helvetica", 12), bg="white")
+            cb = tk.Checkbutton(
+                symptom_frame,
+                text=symptom,
+                variable=var,
+                font=("Helvetica", 12),
+                bg="white"
+            )
             cb.pack(anchor="w", pady=3)
 
         # Image frame
         image_frame = tk.Frame(self.root, bg="white", bd=2, relief="groove")
         image_frame.pack(padx=20, pady=15)
 
-        self.img_label = tk.Label(image_frame, text="No Image Loaded", width=30, height=10, bg="#e1e5ea", fg="#666666", font=("Helvetica", 12))
+        self.img_label = tk.Label(
+            image_frame,
+            text="No Image Loaded",
+            width=30,
+            height=10,
+            bg="#e1e5ea",
+            fg="#666666",
+            font=("Helvetica", 12)
+        )
         self.img_label.pack(padx=10, pady=5)
 
         # Upload image button
-        btn_load = tk.Button(self.root, text="Upload Image", command=self.load_image, bg="#4a90e2", fg="white", font=("Helvetica", 14), width=20, relief="raised")
-        btn_load.pack(pady=(5,15))
+        btn_load = tk.Button(
+            self.root,
+            text="Upload Image",
+            command=self.load_image,
+            bg="#4a90e2",
+            fg="white",
+            font=("Helvetica", 14),
+            width=20,
+            relief="raised"
+        )
+        btn_load.pack(pady=(5, 10))
 
         # Predict button
-        btn_predict = tk.Button(self.root, text="Predict Disease", command=self.predict, bg="#27ae60", fg="white", font=("Helvetica", 14), width=20, relief="raised")
+        btn_predict = tk.Button(
+            self.root,
+            text="Predict Disease",
+            command=self.predict,
+            bg="#27ae60",
+            fg="white",
+            font=("Helvetica", 14),
+            width=20,
+            relief="raised"
+        )
         btn_predict.pack(pady=10)
 
+        # View history button
+        btn_history = tk.Button(
+            self.root,
+            text="View History",
+            command=self.view_history,
+            bg="#e67e22",
+            fg="white",
+            font=("Helvetica", 14),
+            width=20,
+            relief="raised"
+        )
+        btn_history.pack(pady=10)
+
         # Result frame with scrollable Text widget
-        result_frame = tk.LabelFrame(self.root, text="Prediction Result & Symptoms", padx=10, pady=10, font=("Helvetica", 14), bg="white")
+        result_frame = tk.LabelFrame(
+            self.root,
+            text="Prediction Result & Symptoms",
+            padx=10,
+            pady=10,
+            font=("Helvetica", 14),
+            bg="white"
+        )
         result_frame.pack(padx=20, pady=10, fill="both", expand=True)
 
         self.result_text = scrolledtext.ScrolledText(result_frame, wrap=tk.WORD, font=("Helvetica", 12))
@@ -104,6 +176,8 @@ class DiseasePredictionGUI:
             confidence = np.max(prediction)
             img_result = f"Image Prediction: {predicted_class} (Confidence: {confidence:.4f})"
         else:
+            predicted_class = "N/A"
+            confidence = 0.0
             img_result = "No image uploaded."
 
         if has_symptoms:
@@ -113,10 +187,37 @@ class DiseasePredictionGUI:
 
         result_text = f"{img_result}\n\n{symptom_msg}"
 
+        # ✅ Save to MongoDB
+        record = {
+            "symptoms": selected_symptoms,
+            "predicted_disease": predicted_class,
+            "confidence": float(confidence)
+        }
+        predictions.insert_one(record)
+        print("✅ Prediction saved to MongoDB!")
+
+        # Show result in GUI
         self.result_text.config(state=tk.NORMAL)
         self.result_text.delete('1.0', tk.END)
         self.result_text.insert(tk.END, result_text)
         self.result_text.config(state=tk.DISABLED)
+
+    def view_history(self):
+        self.result_text.config(state=tk.NORMAL)
+        self.result_text.delete('1.0', tk.END)
+
+        history = predictions.find().sort("_id", -1).limit(5)  # show last 5
+        if history.count() == 0:
+            self.result_text.insert(tk.END, "No history found in database.")
+        else:
+            for idx, record in enumerate(history, 1):
+                self.result_text.insert(
+                    tk.END,
+                    f"{idx}. Disease: {record['predicted_disease']} | Symptoms: {', '.join(record['symptoms'])} | Confidence: {record['confidence']:.4f}\n"
+                )
+
+        self.result_text.config(state=tk.DISABLED)
+
 
 if __name__ == "__main__":
     root = tk.Tk()
