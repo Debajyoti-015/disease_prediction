@@ -1,25 +1,23 @@
   Disease Prediction System  
 
-This project is a **Machine Learning-based Disease Prediction System** that predicts diseases based on symptoms and medical images.  
-It includes a **Tkinter GUI** for easy interaction and supports both **symptom-based** and **image-based** prediction.  
+A Python-based application that predicts diseases using machine learning models trained on symptoms and medical images.  
+It provides a Tkinter GUI for user interaction and stores relevant information in a database for future use.
 
-  Features  
--  Predict diseases from **symptom checklist**  
--  Predict diseases from **medical images** using a trained CNN model  
--  User-friendly **GUI interface** (Tkinter)  
--  Modular code structure for easy extension  
--  `.gitignore` included (large model files & dataset excluded from repo)  
+Features
+- User-friendly Tkinter GUI (`disease_gui_improved.py`)  
+- Predict diseases from symptoms or uploaded medical images 
+- Uses CNN model (H5) for image classification  
+- Supports Pickle model (PKL) for symptom-based predictions  
+- Training script included (`train_model.py`)  
+- Dataset provided under `sample_dataset/`  
 
-
-  Project Structure  
+Project Structure
 disease_prediction/
 │
-├── disease_gui.py # Tkinter GUI for prediction
-├── disease_gui_improved.py # Enhanced version of GUI
-├── disease_gui_pyqt.py # PyQt GUI version (optional)
-├── predictor.py # ML prediction logic
-├── train_model.py # Training script for models
-├── check_counts.py # Utility script
-├── .gitignore # Ignore large files (models, datasets)
-└── sample_dataset/ # Example dataset (ignored in Git)
-
+├── sample_dataset/ # Sample dataset for testing/training
+├── disease_gui_improved.py # Tkinter-based GUI for predictions
+├── train_model.py # Script to train ML models
+├── model_img.h5 # Trained CNN model (image-based)
+├── model_img.pkl # Trained ML model (pickle)
+├── README.md # Documentation
+└── .gitignore # Git ignore rules
